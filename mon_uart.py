@@ -9,10 +9,13 @@ import serial
 import signal
 import sys
 import struct
+import subprocess
+import os
 
 #Globals
 MAX_FRAME_LEN = 1024
 PRINT_ASCII = False
+VSITE = os.environ["VSITE"]
 
 #Handle CTRL-C
 def signal_handler(signal, frame):
@@ -20,8 +23,14 @@ def signal_handler(signal, frame):
 	ser.close()
 	sys.exit(0)
 
+#Write frame data to file and server
 def write_frame_data(frame_data, fout):
 	frame_data_ba = bytearray(frame_data)
+
+	#Open Server SSH connection
+	ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE], 
+					stdin=subprocess.PIPE)
+
 	if(PRINT_ASCII):
 		for c in frame_data:
 			sys.stdout.write("%02X" % c)
@@ -29,6 +38,7 @@ def write_frame_data(frame_data, fout):
 		sys.stdout.flush()
 	else:
 		fout.write(frame_data_ba)
+		ssh_pipe.communicate(input=frame_data_ba)
 
 ##Main
 #Open log file
