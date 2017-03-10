@@ -16,6 +16,7 @@ import datetime
 #Globals
 MAX_FRAME_LEN = 1024
 PRINT_ASCII = False
+WRITE_FILE = False
 VSITE = os.environ["VSITE"]
 LOG_PATH = "/home/vapr/logs/"
 
@@ -45,7 +46,8 @@ def write_frame_data(frame_data):
 		sys.stdout.write("\r\n")
 		sys.stdout.flush()
 	else:
-		fout.write(frame_data_ba)
+		if(WRITE_FILE):
+			fout.write(frame_data_ba)
 		ssh_pipe.communicate(input=frame_data_ba)
 
 	fout.flush()
