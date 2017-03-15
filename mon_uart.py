@@ -16,7 +16,7 @@ import datetime
 #Globals
 MAX_FRAME_LEN = 1024
 PRINT_ASCII = False
-WRITE_FILE = False
+WRITE_FILE = True
 VSITE = os.environ["VSITE"]
 LOG_PATH = "/home/vapr/logs/"
 
@@ -82,6 +82,8 @@ frame_data = []
 frame_cksum = 0
 
 while(True):
+	#Reset Watchdog
+	os.system("sudo touch /dev/watchdog")
 
 	#Read Input
 	in_byte = ser.read()
