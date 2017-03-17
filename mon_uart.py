@@ -16,8 +16,9 @@ import datetime
 #Globals
 MAX_FRAME_LEN = 1024
 PRINT_ASCII = False
-WRITE_FILE = True
-VSITE = os.environ["VSITE"]
+WRITE_FILE = False
+#VSITE = os.environ["VSITE"]
+VSITE = "VB001"
 LOG_PATH = "/home/vapr/logs/"
 
 #Handle CTRL-C
@@ -27,12 +28,9 @@ def signal_handler(signal, frame):
 	sys.exit(0)
 
 #Write frame data to file and server
-def write_frame_data(frame_data):
+def write_frame_data(frame_data, ssh_pipe):
 	frame_data_ba = bytearray(frame_data)
 
-	#Open Server SSH connection
-	ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE], 
-					stdin=subprocess.PIPE)
 
 	#Open log file
 	doy = datetime.datetime.now().timetuple().tm_yday
@@ -48,7 +46,15 @@ def write_frame_data(frame_data):
 	else:
 		if(WRITE_FILE):
 			fout.write(frame_data_ba)
-		ssh_pipe.communicate(input=frame_data_ba)
+		#ssh_pipe.communicate(input=frame_data_ba)
+		try:
+			ssh_pipe.stdin.write(frame_data_ba)
+		except:
+			ssh_pipe = subprocess.Popen(
+					['ssh', '-e','none','data-log',VSITE],
+					stdin=subprocess.PIPE)
+			ssh_pipe.stdin.write(frame_data_ba)
+			
 
 	fout.flush()
 	fout.close()
@@ -81,9 +87,12 @@ in_data = False
 frame_data = []
 frame_cksum = 0
 
+#Open Server SSH connection
+ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE], 
+				stdin=subprocess.PIPE)
 while(True):
 	#Reset Watchdog
-	os.system("sudo touch /dev/watchdog")
+	#os.system("sudo touch /dev/watchdog")
 
 	#Read Input
 	in_byte = ser.read()
@@ -133,7 +142,7 @@ while(True):
 			#sys.stdout.write("CKSUM1:%X " % frame_cksum)
 			#sys.stdout.write("CKSUM2:%X\r\n" % in_hex)
 			if(frame_cksum == in_hex): 
-				write_frame_data(frame_data)
+				write_frame_data(frame_data,ssh_pipe)
 				#sys.stdout.write("CKSUM Matches!\r\n")
 		elif(i>3):
 			frame_cksum += in_hex
