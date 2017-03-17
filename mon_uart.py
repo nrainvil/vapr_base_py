@@ -50,12 +50,8 @@ def write_frame_data(frame_data, ssh_pipe):
 		try:
 			ssh_pipe.stdin.write(frame_data_ba)
 		except:
-			ssh_pipe = subprocess.Popen(
-					['ssh', '-e','none','data-log',VSITE],
-					stdin=subprocess.PIPE)
-			ssh_pipe.stdin.write(frame_data_ba)
-			
-
+			print "Unexpected Error:",sys.exc_info()[0]
+			ssh_pipe.terminate()
 	fout.flush()
 	fout.close()
 
@@ -93,6 +89,13 @@ ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE],
 while(True):
 	#Reset Watchdog
 	#os.system("sudo touch /dev/watchdog")
+
+	#Check ssh process
+	if(ssh_pipe.poll() != None):
+		print "SSH process died, restarting"
+		ssh_pipe = subprocess.Popen(
+				['ssh', '-e','none','data-log',VSITE], 
+				stdin=subprocess.PIPE)
 
 	#Read Input
 	in_byte = ser.read()
