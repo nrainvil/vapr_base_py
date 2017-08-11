@@ -87,8 +87,11 @@ frame_data = []
 frame_cksum = 0
 
 #Open Server SSH connection
-ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE], 
+#ssh_pipe = subprocess.Popen(['ssh', '-e','none','data-log',VSITE], 
+#				stdin=subprocess.PIPE)
+ssh_pipe = subprocess.Popen(['ssh','-o','StrictHostKeyChecking=no','-e','none','data-log',VSITE],
 				stdin=subprocess.PIPE)
+
 while(True):
 	#Reset Watchdog
 	#os.system("sudo touch /dev/watchdog")
