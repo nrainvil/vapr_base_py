@@ -103,6 +103,14 @@ while(True):
 				['ssh', '-e','none','data-log',VSITE], 
 				stdin=subprocess.PIPE)
 	else:
+		#Check for command
+		fcmd = open(LOG_PATH + "cmd_buff.txt", "rw+")
+		cmd_line = fcmd.readline()
+		if cmd_line != "" :
+			print "%s" % cmd_line
+		fcmd.truncate(0)
+		fcmd.close()
+
 		#Read Input
 		in_byte = ser.read()
 		in_hex = ord(in_byte)
