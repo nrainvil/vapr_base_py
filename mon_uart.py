@@ -12,6 +12,7 @@ import struct
 import subprocess
 import os
 import datetime
+import math
 
 #Globals
 MAX_FRAME_LEN = 1024
@@ -92,6 +93,10 @@ frame_cksum = 0
 ssh_pipe = subprocess.Popen(['ssh','-o','StrictHostKeyChecking=no','-e','none','data-log',VSITE],
 				stdin=subprocess.PIPE)
 
+out_header=b"\x7E"
+
+out_dest_opts="\x10\x01\x00\x13\xA2\x00\x41\x25\xD5\x13\xFF\xFE\x00\x00"
+
 while(True):
 	#Reset Watchdog
 	#os.system("sudo touch /dev/watchdog")
@@ -107,7 +112,20 @@ while(True):
 		fcmd = open(LOG_PATH + "cmd_buff.txt", "rw+")
 		cmd_line = fcmd.readline()
 		if cmd_line != "" :
-			print "%s" % cmd_line
+			#Calc Checksum
+			ser.write(out_header)
+			ser.write(chr((len(cmd_line)+13)/255))
+			ser.write(chr((len(cmd_line)+13)%255))
+			ser.write(out_dest_opts)
+
+			out_cksum = 1041 #Sum of Dest and Opts 
+			for c in cmd_line:
+				if ord(c) != 10:
+					ser.write(c)
+					out_cksum += ord(c)
+			out_cksum %= 0x100
+			out_cksum = 0xFF - out_cksum
+			ser.write(chr(out_cksum))
 		fcmd.truncate(0)
 		fcmd.close()
 
