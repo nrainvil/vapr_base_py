@@ -19,8 +19,9 @@ MAX_FRAME_LEN = 1024
 PRINT_ASCII = False
 WRITE_FILE = False
 #VSITE = os.environ["VSITE"]
-VSITE = "VB001"
+VSITE = "VB004"
 LOG_PATH = "/home/vapr/logs/"
+cmd_addr = 12
 
 #Handle CTRL-C
 def signal_handler(signal, frame):
@@ -66,7 +67,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 #Configure serial port
 ser = serial.Serial(
-	port='/dev/ttyO1',
+	port='/dev/ttyO5',
 	baudrate=9600,
 	parity=serial.PARITY_NONE,
 	stopbits=serial.STOPBITS_ONE,
@@ -95,7 +96,11 @@ ssh_pipe = subprocess.Popen(['ssh','-o','StrictHostKeyChecking=no','-e','none','
 
 out_header=b"\x7E"
 
-out_dest_opts="\x10\x01\x00\x13\xA2\x00\x41\x25\xD5\x13\xFF\xFE\x00\x00"
+out_dest_opts="\x10\x01"
+out_dest_opts2 = "\xFF\xFE\x00\x00"
+out_addr = "\x00\x13\xA2\x00\x41\x25\xD5\x13"
+out_cksum = 1041 #Sum of Dest and Opts 
+
 
 while(True):
 	#Reset Watchdog
@@ -112,13 +117,32 @@ while(True):
 		fcmd = open(LOG_PATH + "cmd_buff.txt", "rw+")
 		cmd_line = fcmd.readline()
 		if cmd_line != "" :
+			cmd_parts = cmd_line.split(";");
+			cmd_addr = int(cmd_parts[0])
+			cmd_line = cmd_parts[1]
+
+			#Choose Dest Radio
+			if(cmd_addr==11):
+				out_addr = "\x00\x13\xA2\x00\x41\x25\xD5\x13"
+				out_cksum = 1041 #Sum of Dest and Opts 
+			elif(cmd_addr==12):
+				out_addr = "\x00\x13\xA2\x00\x41\x72\x9F\xD3"
+				out_cksum = 526 + 730 #Sum of Dest and Opts 
+			elif(cmd_addr==13):
+				out_addr = "\x00\x13\xA2\x00\x41\x72\x9F\xCD"
+				out_cksum = 526 + 724 #Sum of Dest and Opts 
+			elif(cmd_addr==14):
+				out_addr = "\x00\x13\xA2\x00\x41\x72\x9F\xBB"
+				out_cksum = 526 + 706 #Sum of Dest and Opts 
+
 			#Calc Checksum
 			ser.write(out_header)
 			ser.write(chr((len(cmd_line)+13)/255))
 			ser.write(chr((len(cmd_line)+13)%255))
 			ser.write(out_dest_opts)
+			ser.write(out_addr)
+			ser.write(out_dest_opts2)
 
-			out_cksum = 1041 #Sum of Dest and Opts 
 			for c in cmd_line:
 				if ord(c) != 10:
 					ser.write(c)
