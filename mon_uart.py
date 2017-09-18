@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #
 #mon_uart.py
-#Montior the UART port, parse and forward XBEE frames
+#Monitor the UART port, parse and forward XBEE frames
 #
 ###############################################################################
 
@@ -16,10 +16,10 @@ import math
 
 #Globals
 MAX_FRAME_LEN = 1024
-PRINT_ASCII = False
+PRINT_ASCII = True
 WRITE_FILE = False
 #VSITE = os.environ["VSITE"]
-VSITE = "VB001"
+VSITE = "VB006"
 LOG_PATH = "/home/vapr/logs/"
 
 #Handle CTRL-C
@@ -98,16 +98,17 @@ out_header=b"\x7E"
 out_dest_opts="\x10\x01\x00\x13\xA2\x00\x41\x25\xD5\x13\xFF\xFE\x00\x00"
 
 while(True):
-	#Reset Watchdog
-	#os.system("sudo touch /dev/watchdog")
 
 	#Check ssh process
 	if(ssh_pipe.poll() != None):
-		print "SSH process died, restarting"
+		#print "SSH process died, restarting"
 		ssh_pipe = subprocess.Popen(
 				['ssh', '-e','none','data-log',VSITE], 
 				stdin=subprocess.PIPE)
 	else:
+		#Reset Watchdog
+		#os.system("sudo touch /dev/watchdog")
+
 		#Check for command
 		fcmd = open(LOG_PATH + "cmd_buff.txt", "rw+")
 		cmd_line = fcmd.readline()
